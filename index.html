@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Typewriter Kreuzbühl</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    input {
+      padding: 10px;
+      font-size: 1rem;
+      width: 100%;
+      max-width: 400px;
+    }
+    .sentence span {
+      font-family: monospace;
+      font-size: 1.5rem;
+    }
+    .green { color: green; }
+    .red { color: red; }
+    .highscores {
+      margin-top: 20px;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Typewriter Kreuzbühl</h1>
+
+  <div id="login">
+    <input id="nameInput" placeholder="Dein Name" />
+    <button onclick="startGame()">Start</button>
+  </div>
+
+  <div id="game" class="hidden">
+    <p id="level">Level 1</p>
+    <p id="score">Punkte: 0</p>
+    <div class="sentence" id="sentence"></div>
+    <input id="textInput" oninput="checkInput()" placeholder="Tippe hier..." />
+
+    <div class="highscores">
+      <h3>🏆 Bestenliste</h3>
+      <ul id="scoreList"></ul>
+    </div>
+  </div>
+
+  <div id="minigame" class="hidden">
+    <h2>Minigame! Klicke so oft du kannst!</h2>
+    <p id="timer">60s</p>
+    <button onclick="clickCount()">KLICK!</button>
+    <p id="clicks">Deine Klicks: 0</p>
+  </div>
+
+  <audio id="successSound" src="success.mp3"></audio>
+  <audio id="clickSound" src="click.mp3"></audio>
+
+  <script>
+    const sampleSentences = [
+      "Emir hat das erstellt.",
+      "Der Himmel ist blau und die Sonne scheint hell.",
+      "Ich gehe jeden Morgen gerne spazieren.",
+      "Programmieren macht Spass und ist sehr kreativ.",
+      "Das Leben ist schön, wenn man kein Schule hat.",
+      "Lesen bildet und erweitert den Horizont.",
+      "Die Katze schläft gerne in der Sonne.",
+      "Ein Apfel am Tag hält den Doktor fern.",
+      "Musik kann Emotionen wecken und beruhigen.",
+      "Zusammenarbeit führt oft zu besseren Ergebnissen."
+    ];
+
+    let name = "";
+    let level = 1;
+    let score = 0;
+    let sentence = "";
+    let clicks = 0;
+    let timeLeft = 60;
+    let highScores = [];
+
+    const sentenceEl = document.getElementById("sentence");
+    const textInput = document.getElementById("textInput");
+    const nameInput = document.getElementById("nameInput");
+    const scoreList = document.getElementById("scoreList");
+
+    function startGame() {
+      name = nameInput.value.trim();
+      if (!name) return;
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("game").classList.remove("hidden");
+      nextSentence();
+    }
+
+    function nextSentence() {
+      const sents = Array.from({ length: 10 }, () => sampleSentences[Math.floor(Math.random() * sampleSentences.length)]);
+      sentence = sents[Math.floor(Math.random() * sents.length)];
+      textInput.value = "";
+      renderSentence();
+      document.getElementById("level").innerText = `Level ${level}`;
+    }
+
+    function renderSentence() {
+      sentenceEl.innerHTML = "";
+      for (let i = 0; i < sentence.length; i++) {
+        const span = document.createElement("span");
+        span.innerText = sentence[i];
+        if (i < textInput.value.length) {
+          span.className = textInput.value[i] === sentence[i] ? "green" : "red";
+        }
+        sentenceEl.appendChild(span);
+      }
+    }
+
+    function checkInput() {
+      renderSentence();
+      if (textInput.value === sentence) {
+        document.getElementById("successSound").play();
+        score += 10;
+        level++;
+        if (level % 10 === 1) {
+          startMinigame();
+          return;
+        }
+        highScores.push({ name, score });
+        updateScores();
+        nextSentence();
+      }
+    }
+
+    function updateScores() {
+      scoreList.innerHTML = "";
+      const sorted = [...highScores].sort((a, b) => b.score - a.score).slice(0, 5);
+      for (const entry of sorted) {
+        const li = document.createElement("li");
+        li.innerText = `${entry.name}: ${entry.score}`;
+        scoreList.appendChild(li);
+      }
+      document.getElementById("score").innerText = `Punkte: ${score}`;
+    }
+
+    function startMinigame() {
+      document.getElementById("game").classList.add("hidden");
+      document.getElementById("minigame").classList.remove("hidden");
+      clicks = 0;
+      timeLeft = 60;
+      updateMinigame();
+    }
+
+    function updateMinigame() {
+      document.getElementById("clicks").innerText = `Deine Klicks: ${clicks}`;
+      document.getElementById("timer").innerText = `${timeLeft}s`;
+      if (timeLeft > 0) {
+        setTimeout(() => {
+          timeLeft--;
+          updateMinigame();
+        }, 1000);
+      } else {
+        document.getElementById("minigame").classList.add("hidden");
+        document.getElementById("game").classList.remove("hidden");
+        nextSentence();
+      }
+    }
+
+    function clickCount() {
+      document.getElementById("clickSound").play();
+      clicks++;
+      document.getElementById("clicks").innerText = `Deine Klicks: ${clicks}`;
+    }
+  </script>
+</body>
+</html>
